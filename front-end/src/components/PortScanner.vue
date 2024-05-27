@@ -1,25 +1,39 @@
 <template>
-  <div class="port-scanner">
+  <div>
     <h1>Port Scanner</h1>
-    <form @submit.prevent="scanPorts">
-      <label for="target_ip">Target IP:</label>
-      <input type="text" v-model="targetIp" required />
-
-      <label for="start_port">Start Port:</label>
-      <input type="number" v-model="startPort" required />
-
-      <label for="end_port">End Port:</label>
-      <input type="number" v-model="endPort" required />
-
-      <button type="submit">Scan</button>
-    </form>
-    <div v-if="results">
-      <h2>Scan Results</h2>
-      <ul>
-        <li v-for="(status, port) in results" :key="port">
-          Port {{ port }}: {{ status }}
-        </li>
-      </ul>
+    <div>
+      <label for="url">URL:</label>
+      <input v-model="url" id="url" type="text" />
+    </div>
+    <div>
+      <label for="startPort">Start Port:</label>
+      <input v-model.number="startPort" id="startPort" type="number" />
+    </div>
+    <div>
+      <label for="endPort">End Port:</label>
+      <input v-model.number="endPort" id="endPort" type="number" />
+    </div>
+    <button @click="startScan">Start Scan</button>
+    
+    <div v-if="progress >= 0">
+      <progress :value="progress" max="100"></progress>
+      <p>{{ progress }}% completed</p>
+    </div>
+    
+    <div v-if="openPorts.length > 0">
+      <h2>Open Ports:</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Port</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="port in openPorts" :key="port">
+            <td>{{ port }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
@@ -30,68 +44,85 @@ import axios from 'axios';
 export default {
   data() {
     return {
-      targetIp: '',
-      startPort: '',
-      endPort: '',
-      results: null
+      url: '',
+      startPort: null,
+      endPort: null,
+      taskId: null,
+      progress: -1,
+      openPorts: []
     };
   },
   methods: {
-    async scanPorts() {
-      try {
-        const response = await axios.post('/api/scan', {
-          target_ip: this.targetIp,
-          start_port: this.startPort,
-          end_port: this.endPort
-        });
-        this.results = response.data;
-      } catch (error) {
-        console.error('Error scanning ports:', error);
-      }
+    async startScan() {
+      this.progress = 0;
+      this.openPorts = [];
+      const response = await axios.post('http://127.0.0.1:5000/api/scan', {
+        url: this.url,
+        start_port: this.startPort,
+        end_port: this.endPort
+      });
+      this.taskId = response.data.task_id;
+      this.pollProgress();
+    },
+    async pollProgress() {
+      const interval = setInterval(async () => {
+        const response = await axios.get(`http://127.0.0.1:5000/api/progress/${this.taskId}`);
+        this.progress = response.data.progress;
+        if (this.progress === 100) {
+          clearInterval(interval);
+          this.getResult();
+        }
+      }, 1000);
+    },
+    async getResult() {
+      const response = await axios.get(`http://127.0.0.1:5000/api/result/${this.taskId}`);
+      this.openPorts = response.data.open_ports;
     }
   }
 };
 </script>
 
 <style scoped>
-.port-scanner {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-  text-align: center;
+body {
+  font-family: Arial, sans-serif;
 }
 
-form {
-  margin-bottom: 20px;
+div {
+  margin: 20px;
 }
 
 label {
-  display: block;
-  margin: 10px 0 5px;
+  display: inline-block;
+  width: 100px;
 }
 
 input {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  margin: 10px 0;
 }
 
 button {
-  padding: 10px 20px;
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  margin: 20px 0;
 }
 
-button:hover {
-  background-color: #0056b3;
+progress {
+  width: 100%;
+  height: 20px;
+  margin: 20px 0;
 }
 
-h2 {
-  margin-top: 20px;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: center;
+}
+
+th {
+  background-color: #f4f4f4;
 }
 </style>
