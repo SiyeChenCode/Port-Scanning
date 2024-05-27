@@ -15,6 +15,7 @@
     </div>
     <button @click="startScan">Start Scan</button>
     
+    
     <div v-if="progress >= 0">
       <progress :value="progress" max="100"></progress>
       <p>{{ progress }}% completed</p>
