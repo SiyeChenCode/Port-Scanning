@@ -15,7 +15,6 @@
     </div>
     <button @click="startScan">Start Scan</button>
     
-    
     <div v-if="progress >= 0">
       <progress :value="progress" max="100"></progress>
       <p>{{ progress }}% completed</p>
@@ -27,11 +26,17 @@
         <thead>
           <tr>
             <th>Port</th>
+            <th>Protocol</th>
+            <th>Status</th>
+            <th>Service</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="port in openPorts" :key="port">
-            <td>{{ port }}</td>
+          <tr v-for="port in openPorts" :key="port.port">
+            <td>{{ port.port }}</td>
+            <td>{{ port.protocol }}</td>
+            <td>{{ port.status }}</td>
+            <td>{{ port.service }}</td>
           </tr>
         </tbody>
       </table>

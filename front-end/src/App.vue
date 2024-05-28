@@ -17,7 +17,7 @@ export default {
 </script>
 
 <style>
-/* 添加一些全局样式 */
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   text-align: center;

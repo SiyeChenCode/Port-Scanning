@@ -1,4 +1,3 @@
-# backend/app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import socket
@@ -17,8 +16,18 @@ def scan_ports(url, start_port, end_port, task_id):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(1)
         result = sock.connect_ex((url, port))
+        service = None
+        try:
+            service = socket.getservbyport(port)
+        except:
+            service = "Unknown"
         if result == 0:
-            open_ports.append(port)
+            open_ports.append({
+                "port": port,
+                "protocol": "tcp",
+                "status": "open",
+                "service": service
+            })
         sock.close()
         scan_progress[task_id] = int((i + 1) / total_ports * 100)
     scan_results[task_id] = open_ports
